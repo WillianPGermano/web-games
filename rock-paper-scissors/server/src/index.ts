@@ -10,7 +10,7 @@
  * - Graceful shutdown handling for cleanup
  */
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
@@ -40,7 +40,7 @@ app.use(cors({
 app.use(express.json());
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
@@ -49,7 +49,7 @@ app.get('/health', (req, res) => {
 });
 
 // API endpoint for server info
-app.get('/api/info', (req, res) => {
+app.get('/api/info', (req: Request, res: Response) => {
   res.json({
     name: 'Rock-Paper-Scissors Multiplayer Server',
     version: '1.0.0',

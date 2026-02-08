@@ -87,7 +87,7 @@ export function createRoom(
     format,
     difficulty,
     state: 'waiting',
-    players: [] as any, // Will be populated with players
+    players: [] as any as [Player, Player?], // Will be populated immediately after creation
     currentRound: 0,
     scores: {},
     roundChoices: {},
@@ -219,8 +219,8 @@ export function removePlayerFromRoom(roomId: string, playerId: string): void {
   // Clean up player mapping
   playerRoomMap.delete(playerId);
 
-  // Delete room if empty
-  if (room.players.length === 0) {
+  // Delete room if empty (only 1 player left means the other left)
+  if (room.players.length < 2) {
     deleteRoom(roomId);
   } else {
     // Reset room state if player left during game

@@ -186,7 +186,7 @@ export class GameClient {
    * @param difficulty - Difficulty level
    */
   startCPUGame(cpuOpponent: string, format: MatchFormat, difficulty: Difficulty): void {
-    this.socket.emit('cpu:start', cpuOpponent, format, difficulty);
+    this.socket.emit('cpu:start', cpuOpponent as any, format, difficulty);
   }
 
   /**

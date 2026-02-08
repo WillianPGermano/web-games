@@ -335,7 +335,7 @@ export function getMatchRounds(matchId: string): DBRound[] {
     return [];
   }
 
-  return result[0].values.map(row => ({
+  return result[0].values.map((row: any) => ({
     id: row[0] as string,
     match_id: row[1] as string,
     round_number: row[2] as number,
@@ -408,7 +408,7 @@ export function getRecentMatches(playerId: string, limit: number = 10): DBMatch[
     return [];
   }
 
-  return result[0].values.map(row => ({
+  return result[0].values.map((row: any) => ({
     id: row[0] as string,
     room_code: row[1] as string | null,
     player1_id: row[2] as string,

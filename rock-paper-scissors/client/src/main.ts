@@ -18,7 +18,7 @@ import type { GameChoice, MatchFormat, Difficulty } from '../../shared/src/types
 // Configuration
 // ============================================================================
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+const SERVER_URL = (import.meta as any).env?.VITE_SERVER_URL || 'http://localhost:3001';
 
 // ============================================================================
 // Initialize Application

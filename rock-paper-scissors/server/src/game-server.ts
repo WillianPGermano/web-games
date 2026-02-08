@@ -30,6 +30,7 @@ import type {
   MatchResult,
   ClientToServerEvents,
   ServerToClientEvents,
+  GameRoom,
 } from '../../shared/src/types.js';
 import {
   createRoom,
@@ -167,10 +168,10 @@ export function initializeGameServer(
 
       if (room) {
         // Match found! Notify both players
-        const [player1, player2] = room.players;
+        const [player1, player2] = room.players as [Player, Player];
         
-        io.to(player1!.socketId).emit('room:joined', sanitizeRoom(room));
-        io.to(player2!.socketId).emit('room:joined', sanitizeRoom(room));
+        io.to(player1.socketId).emit('room:joined', sanitizeRoom(room));
+        io.to(player2.socketId).emit('room:joined', sanitizeRoom(room));
 
         // Start the game
         startGame(io, room.id);
@@ -187,6 +188,7 @@ export function initializeGameServer(
       const player = connectedPlayers.get(socket.id);
       if (player) {
         removeFromAllQueues(player.id);
+        socket.emit('matchmaking:left' as any);
       }
     });
 
@@ -245,10 +247,10 @@ export function initializeGameServer(
       addPlayerToRoom(room.id, player);
 
       // Notify both players
-      const [player1, player2] = room.players;
-      io.to(player1!.socketId).emit('player:joined', player2!);
-      io.to(player1!.socketId).emit('room:joined', sanitizeRoom(room));
-      io.to(player2!.socketId).emit('room:joined', sanitizeRoom(room));
+      const [player1, player2] = room.players as [Player, Player];
+      io.to(player1.socketId).emit('player:joined', player2);
+      io.to(player1.socketId).emit('room:joined', sanitizeRoom(room));
+      io.to(player2.socketId).emit('room:joined', sanitizeRoom(room));
 
       // Start the game
       startGame(io, room.id);
@@ -265,6 +267,7 @@ export function initializeGameServer(
       if (!room) return;
 
       handlePlayerLeave(io, room.id, player.id);
+      socket.emit('room:left' as any);
     });
 
     // ========================================================================
@@ -290,10 +293,10 @@ export function initializeGameServer(
 
       console.log(`✓ ${player.name} chose ${choice} in round ${room.currentRound}`);
 
-      const [player1, player2] = room.players;
+      const [player1, player2] = room.players as [Player, Player];
       
       // Check if this is a CPU game
-      const isCPUGame = player2?.socketId === 'cpu';
+      const isCPUGame = player2.socketId === 'cpu';
       
       if (isCPUGame) {
         // CPU game: immediately get CPU choice and end round
@@ -304,21 +307,21 @@ export function initializeGameServer(
         recordPlayerChoice(player.id, choice);
         
         // Record CPU choice
-        room.roundChoices[player2!.id] = cpuChoice;
+        room.roundChoices[player2.id] = cpuChoice;
         
         console.log(`✓ CPU chose ${cpuChoice} in round ${room.currentRound}`);
         
         // Clear timer and end round
         clearRoomTimer(room.id);
         
-        const choice1 = player1!.id === player.id ? choice : cpuChoice;
-        const choice2 = player1!.id === player.id ? cpuChoice : choice;
+        const choice1 = player1.id === player.id ? choice : cpuChoice;
+        const choice2 = player1.id === player.id ? cpuChoice : choice;
         
         endRound(io, room.id, choice1, choice2, false, false);
       } else {
         // Human vs human: check if both players have chosen
-        const choice1 = room.roundChoices[player1!.id];
-        const choice2 = room.roundChoices[player2!.id];
+        const choice1 = room.roundChoices[player1.id];
+        const choice2 = room.roundChoices[player2.id];
 
         if (choice1 !== null && choice2 !== null) {
           // Both players chose, end the round
@@ -339,7 +342,7 @@ export function initializeGameServer(
       if (!room || room.state !== 'match_end') return;
 
       // Get opponent
-      const opponent = room.players.find(p => p?.id !== player.id);
+      const opponent = room.players.find((p): p is Player => p !== undefined && p.id !== player.id);
       if (!opponent) return;
 
       // Notify opponent of rematch request
@@ -359,7 +362,7 @@ export function initializeGameServer(
       if (!room || room.state !== 'match_end') return;
 
       // Get opponent
-      const opponent = room.players.find(p => p?.id !== player.id);
+      const opponent = room.players.find((p): p is Player => p !== undefined && p.id !== player.id);
       if (!opponent) return;
 
       if (accepted) {
@@ -439,7 +442,7 @@ function startGame(
   if (!room || room.players.length !== 2) return;
 
   // Create match record in database
-  const [player1, player2] = room.players;
+  const [player1, player2] = room.players as [Player, Player];
   room.matchId = createMatch({
     roomCode: room.roomCode,
     player1Id: player1!.id,
@@ -491,7 +494,7 @@ function startRound(
   });
 
   const timeLimit = getTimeLimit(room.difficulty);
-  const [player1, player2] = room.players;
+  const [player1, player2] = room.players as [Player, Player];
 
   // Notify players (skip CPU)
   if (player1.socketId !== 'cpu') {
@@ -524,7 +527,7 @@ function handleRoundTimeout(
   const room = getRoom(roomId);
   if (!room || room.state !== 'playing') return;
 
-  const [player1, player2] = room.players;
+  const [player1, player2] = room.players as [Player, Player];
   const choice1 = room.roundChoices[player1!.id];
   const choice2 = room.roundChoices[player2!.id];
 
@@ -565,7 +568,7 @@ function endRound(
 
   room.state = 'round_end';
 
-  const [player1, player2] = room.players;
+  const [player1, player2] = room.players as [Player, Player];
   let winnerId: string | null = null;
   let reason: 'normal' | 'timeout' | 'tie' = 'normal';
 
@@ -668,7 +671,7 @@ function endMatch(
 
   // Update database with final result
   if (room.matchId) {
-    const [player1, player2] = room.players;
+    const [player1, player2] = room.players as [Player, Player];
     updateMatchResult(
       room.matchId,
       winnerId,
@@ -686,7 +689,7 @@ function endMatch(
   };
 
   // Notify players (skip CPU)
-  const [player1, player2] = room.players;
+  const [player1, player2] = room.players as [Player, Player];
   if (player1!.socketId !== 'cpu') {
     io.to(player1!.socketId).emit('match:end', matchResult);
   }
@@ -724,7 +727,7 @@ function handlePlayerLeave(
   if (!room) return;
 
   // Notify other player
-  const otherPlayer = room.players.find(p => p?.id !== playerId);
+  const otherPlayer = room.players.find((p): p is Player => p !== undefined && p.id !== playerId);
   if (otherPlayer) {
     io.to(otherPlayer.socketId).emit('player:left', playerId);
   }
@@ -761,7 +764,7 @@ function resetRoom(room: GameRoom): void {
   room.matchId = null;
 
   // Reset scores
-  room.players.forEach((player) => {
+  room.players.forEach((player: Player | undefined) => {
     if (player) {
       room.scores[player.id] = 0;
       room.roundChoices[player.id] = null;
