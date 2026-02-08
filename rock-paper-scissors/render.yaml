@@ -5,8 +5,9 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: cd server && npm install && npm run build
-    startCommand: cd server && npm start
+    rootDir: rock-paper-scissors
+    buildCommand: npm install && npm run build
+    startCommand: node server/dist/server/src/index.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -22,7 +23,8 @@ services:
     env: static
     region: oregon
     plan: free
-    buildCommand: cd client && npm install && npm run build
+    rootDir: rock-paper-scissors
+    buildCommand: npm install && npm run build --workspace=client
     staticPublishPath: ./client/dist
     routes:
       - type: rewrite
