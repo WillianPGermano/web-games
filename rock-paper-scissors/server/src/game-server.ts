@@ -386,8 +386,13 @@ export function initializeGameServer(
      * Player wants to start a new match (leave current room).
      */
     socket.on('match:new', () => {
-      socket.emit('matchmaking:leave');
-      socket.emit('room:leave');
+      const player = connectedPlayers.get(socket.id);
+      if (player) {
+        const room = getPlayerRoom(player.id);
+        if (room) {
+          handlePlayerLeave(io, room.id, player.id);
+        }
+      }
     });
 
     // ========================================================================
@@ -756,7 +761,7 @@ function resetRoom(room: GameRoom): void {
   room.matchId = null;
 
   // Reset scores
-  room.players.forEach(player => {
+  room.players.forEach((player) => {
     if (player) {
       room.scores[player.id] = 0;
       room.roundChoices[player.id] = null;

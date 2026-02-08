@@ -87,7 +87,7 @@ export function createRoom(
     format,
     difficulty,
     state: 'waiting',
-    players: [],
+    players: [] as any, // Will be populated with players
     currentRound: 0,
     scores: {},
     roundChoices: {},
