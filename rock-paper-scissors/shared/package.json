@@ -1,0 +1,11 @@
+{
+  "name": "shared",
+  "version": "1.0.0",
+  "description": "Shared types and utilities for client and server",
+  "main": "src/types.ts",
+  "types": "src/types.ts",
+  "scripts": {},
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
