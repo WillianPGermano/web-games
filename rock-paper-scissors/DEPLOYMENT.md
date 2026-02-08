@@ -48,16 +48,17 @@ This guide will help you deploy the Rock-Paper-Scissors game to Render.
    - **Name:** `rps-server` (or any name you prefer)
    - **Region:** Choose closest to you
    - **Branch:** `main`
-   - **Root Directory:** `rock-paper-scissors/server`
+   - **Root Directory:** `rock-paper-scissors` ⚠️ **IMPORTANT: Must be `rock-paper-scissors`, NOT `rock-paper-scissors/server`**
    - **Runtime:** `Node`
-   - **Build Command:** `npm install && npm run build`
-   - **Start Command:** `npm start`
+   - **Build Command:** `npm install && npm run build --workspace=server`
+   - **Start Command:** `node server/dist/server/src/index.js`
    - **Plan:** `Free`
 
 4. **Environment Variables:**
    Click "Advanced" and add:
    - `NODE_ENV` = `production`
    - `PORT` = `3001` (Render will override this automatically)
+   - `CLIENT_URL` = (your frontend URL, will add after deploying client)
    - `CLIENT_URL` = (leave empty for now, we'll add it after deploying the client)
 
 5. Click **"Create Web Service"**
