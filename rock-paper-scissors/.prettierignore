@@ -1,0 +1,6 @@
+node_modules
+dist
+build
+.vite
+*.db
+package-lock.json
