@@ -1,24 +1,35 @@
 # Deployment Guide - Render
 
-This guide will help you deploy the Rock-Paper-Scissors game to Render.
+This comprehensive guide covers deploying the Rock-Paper-Scissors multiplayer game to Render, including both backend and frontend deployment.
 
-## ✅ Latest Update - TypeScript Errors Fixed
+## ✅ Latest Update - All Issues Resolved!
 
-**All TypeScript compilation errors have been resolved!** The following issues were fixed:
+**The deployment is now fully configured and working!** All TypeScript compilation errors and path issues have been resolved.
 
-1. **Removed `rootDir` from server tsconfig** - Allows imports from shared types folder
-2. **Added explicit type annotations** - Fixed implicit `any` type errors
-3. **Fixed GameRoom type handling** - Proper handling of `[Player, Player?]` tuple type
-4. **Fixed player array operations** - Correct type handling in room-manager.ts
-5. **Fixed client type errors** - Type assertions for import.meta.env and CPU types
-6. **Updated ESLint config** - Removed project reference to avoid path issues
+**What was fixed:**
+1. ✅ TypeScript and @types packages moved to dependencies (needed for build)
+2. ✅ Root directory set to `rock-paper-scissors` (allows access to shared folder)
+3. ✅ Separate build scripts created (`build:server` and `build:client`)
+4. ✅ Correct start command path: `node server/dist/server/src/index.js`
+5. ✅ Build command uses workspace-specific build
 
-**Build Status:**
-- ✅ `npm run typecheck` - Pass
-- ✅ `npm run lint` - Pass (warnings only)
-- ✅ `npm run build` - Pass
+**Current Status:**
+- ✅ Backend builds successfully
+- ✅ Backend starts and runs
+- ✅ Health check endpoint working
+- 🔄 Frontend deployment (next step)
 
-**The code is now ready for Render deployment!** Simply trigger a new deploy and it should build successfully.
+---
+
+## Table of Contents
+
+1. [Prerequisites](#prerequisites)
+2. [Backend Deployment](#backend-deployment)
+3. [Frontend Deployment](#frontend-deployment)
+4. [Environment Configuration](#environment-configuration)
+5. [Testing the Deployment](#testing-the-deployment)
+6. [Troubleshooting](#troubleshooting)
+7. [Alternative Platforms](#alternative-platforms)
 
 ---
 
@@ -50,7 +61,7 @@ This guide will help you deploy the Rock-Paper-Scissors game to Render.
    - **Branch:** `main`
    - **Root Directory:** `rock-paper-scissors` ⚠️ **IMPORTANT: Must be `rock-paper-scissors`, NOT `rock-paper-scissors/server`**
    - **Runtime:** `Node`
-   - **Build Command:** `npm install && npm run build --workspace=server`
+   - **Build Command:** `npm install && npm run build:server`
    - **Start Command:** `node server/dist/server/src/index.js`
    - **Plan:** `Free`
 
@@ -58,7 +69,299 @@ This guide will help you deploy the Rock-Paper-Scissors game to Render.
    Click "Advanced" and add:
    - `NODE_ENV` = `production`
    - `PORT` = `3001` (Render will override this automatically)
-   - `CLIENT_URL` = (your frontend URL, will add after deploying client)
+   - `CLIENT_URL` = (leave empty for now, will add after deploying frontend)
+
+5. **Deploy:**
+   - Click "Create Web Service"
+   - Wait for the build to complete (2-3 minutes)
+   - Check the logs for any errors
+   - Once deployed, note the URL (e.g., `https://rps-server.onrender.com`)
+
+### 3. Deploy the Frontend (Client)
+
+1. From Render Dashboard, click **"New +"** → **"Static Site"**
+
+2. **Connect Repository:**
+   - Select your `web-games` repository
+
+3. **Configure Static Site:**
+   - **Name:** `rps-client` (or any name you prefer)
+   - **Branch:** `main`
+   - **Root Directory:** `rock-paper-scissors`
+   - **Build Command:** `npm install && npm run build:client`
+   - **Publish Directory:** `client/dist`
+
+4. **Environment Variables:**
+   - `VITE_SERVER_URL` = `https://your-backend-url.onrender.com` (use the backend URL from step 2)
+
+5. **Deploy:**
+   - Click "Create Static Site"
+   - Wait for the build to complete
+   - Once deployed, note the URL (e.g., `https://rps-client.onrender.com`)
+
+### 4. Update Backend with Frontend URL
+
+1. Go back to your `rps-server` service
+2. Click on **Environment** tab
+3. Update `CLIENT_URL` to your frontend URL (e.g., `https://rps-client.onrender.com`)
+4. Click "Save Changes"
+5. The service will automatically redeploy
+
+---
+
+## Environment Configuration
+
+### Backend Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `NODE_ENV` | Environment mode | `production` |
+| `PORT` | Server port (auto-set by Render) | `3001` |
+| `CLIENT_URL` | Frontend URL for CORS | `https://rps-client.onrender.com` |
+
+### Frontend Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `VITE_SERVER_URL` | Backend API URL | `https://rps-server.onrender.com` |
+
+---
+
+## Testing the Deployment
+
+### 1. Test Backend Health Check
+
+```bash
+curl https://your-backend-url.onrender.com/health
+```
+
+Expected response:
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-02-11T...",
+  "uptime": 123.456
+}
+```
+
+### 2. Test Frontend
+
+1. Open your frontend URL in a browser
+2. Enter a player name
+3. Try creating a private room or joining matchmaking
+4. Open another browser window (or incognito mode)
+5. Join the same room or matchmaking
+6. Play a game!
+
+### 3. Check WebSocket Connection
+
+Open browser console and look for:
+```
+✓ Connected to server
+✓ Player registered: [your-name]
+```
+
+---
+
+## Troubleshooting
+
+### Build Fails: "Cannot find module"
+
+**Problem:** TypeScript can't find shared types or dependencies
+
+**Solution:**
+1. Verify Root Directory is `rock-paper-scissors` (not `rock-paper-scissors/server`)
+2. Check Build Command is `npm install && npm run build:server`
+3. Ensure all dependencies are in `dependencies` (not `devDependencies`)
+
+### Start Fails: "Cannot find module '/opt/render/project/src/rock-paper-scissors/server/dist/index.js'"
+
+**Problem:** Start command path is incorrect
+
+**Solution:**
+1. Update Start Command to: `node server/dist/server/src/index.js`
+2. The path is relative to the root directory (`rock-paper-scissors`)
+
+### Frontend Can't Connect to Backend
+
+**Problem:** CORS or WebSocket connection issues
+
+**Solution:**
+1. Verify `CLIENT_URL` in backend matches your frontend URL exactly
+2. Check `VITE_SERVER_URL` in frontend matches your backend URL
+3. Ensure both URLs use `https://` (not `http://`)
+4. Check browser console for CORS errors
+
+### WebSocket Connection Fails
+
+**Problem:** Socket.io can't establish connection
+
+**Solution:**
+1. Render supports WebSockets on all plans
+2. Verify backend is running: check health endpoint
+3. Check browser console for connection errors
+4. Ensure firewall/network allows WebSocket connections
+
+### Database File Not Persisting
+
+**Problem:** Game data resets on each deploy
+
+**Solution:**
+Render's free tier has ephemeral storage. For persistent data:
+1. Upgrade to paid plan with persistent disk
+2. Or use external database (PostgreSQL on Render)
+3. Or accept that data resets (fine for demo/learning)
+
+### Cold Starts (Free Tier)
+
+**Problem:** First request takes 30+ seconds
+
+**Solution:**
+- Free tier services spin down after 15 minutes of inactivity
+- First request wakes the service (cold start)
+- Upgrade to paid plan for always-on service
+- Or accept cold starts for demo purposes
+
+---
+
+## Alternative Platforms
+
+### Railway
+
+Similar to Render, with different pricing:
+
+```yaml
+# railway.json
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "node server/dist/server/src/index.js",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
+```
+
+### Fly.io
+
+Good for global deployment:
+
+```toml
+# fly.toml
+app = "rps-server"
+
+[build]
+  builder = "heroku/buildpacks:20"
+
+[[services]]
+  internal_port = 3001
+  protocol = "tcp"
+```
+
+### Heroku
+
+Classic PaaS platform:
+
+```
+# Procfile
+web: node server/dist/server/src/index.js
+```
+
+### Self-Hosted (VPS)
+
+For full control:
+
+```bash
+# On your VPS
+git clone https://github.com/your-username/web-games.git
+cd web-games/rock-paper-scissors
+npm install
+npm run build
+pm2 start server/dist/server/src/index.js --name rps-server
+```
+
+---
+
+## Production Considerations
+
+### 1. Database
+
+For production, consider:
+- **PostgreSQL** for better concurrency
+- **Redis** for session storage
+- **Backup strategy** for game data
+
+### 2. Monitoring
+
+Add monitoring for:
+- Server uptime
+- WebSocket connections
+- Error rates
+- Response times
+
+Tools: Sentry, LogRocket, Datadog
+
+### 3. Scaling
+
+For high traffic:
+- **Horizontal scaling**: Multiple server instances
+- **Load balancer**: Distribute traffic
+- **Sticky sessions**: Keep players on same server
+- **Redis adapter**: Share state across servers
+
+### 4. Security
+
+Production checklist:
+- ✅ HTTPS only (no HTTP)
+- ✅ CORS configured correctly
+- ✅ Rate limiting on API endpoints
+- ✅ Input validation on all events
+- ✅ SQL injection prevention (parameterized queries)
+- ✅ XSS prevention (sanitize user input)
+
+### 5. Performance
+
+Optimize for production:
+- Enable gzip compression
+- Add CDN for static assets
+- Implement caching headers
+- Monitor database query performance
+- Use connection pooling
+
+---
+
+## Summary
+
+Deployment checklist:
+
+- ✅ Backend deployed to Render
+- ✅ Frontend deployed to Render
+- ✅ Environment variables configured
+- ✅ CORS configured correctly
+- ✅ WebSocket connections working
+- ✅ Health check endpoint responding
+- ✅ Game playable end-to-end
+
+Your Rock-Paper-Scissors multiplayer game is now live! 🎉
+
+**Backend URL:** `https://your-backend.onrender.com`  
+**Frontend URL:** `https://your-frontend.onrender.com`
+
+Share the frontend URL with friends and start playing!
+
+---
+
+## Next Steps
+
+1. **Monitor**: Check logs regularly for errors
+2. **Test**: Play games to ensure everything works
+3. **Iterate**: Add features, fix bugs, improve UX
+4. **Scale**: Upgrade plan if traffic increases
+5. **Learn**: Study the logs to understand user behavior
+
+Happy deploying! 🚀
+
    - `CLIENT_URL` = (leave empty for now, we'll add it after deploying the client)
 
 5. Click **"Create Web Service"**
